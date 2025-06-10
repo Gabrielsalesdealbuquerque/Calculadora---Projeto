@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Calculadora de Juros Compostos</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <main id="container">
+    <div id="calculator">
+      <h2>Calculadora de Juros Compostos</h2>
+
+      <button onclick="logout()">Sair</button>
+      <p id="welcome"></p>
+
+      <div id="input_box">
+        <div class="input-field">
+          <label for="value">Valor Inicial (capital):</label>
+          <input type="number" id="value" />
+        </div>
+
+        <div class="input-field">
+          <label for="fee">Taxa de Juros a.m:</label>
+          <input type="number" id="fee" />
+        </div>
+
+        <div class="input-field">
+          <label for="time">Tempo de rendimento a.m:</label>
+          <input type="number" id="time" />
+        </div>
+      </div>
+
+      <div id="result">
+        <h4>Resultado:</h4>
+        <span id="total">R$ 0,00</span>
+      </div>
+
+      <button id="calculate">Calcular</button>
+
+      <div id="history">
+        <h4>Histórico de Cálculos:</h4>
+        <ul id="historyList"></ul>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    let user;
+
+    try {
+      user = JSON.parse(localStorage.getItem("loggedUser"));
+    } catch {
+      user = null;
+    }
+
+    if (!user || !user.email) {
+      alert("Você precisa estar logado para acessar a calculadora.");
+      window.location.href = "index.html";
+    } else {
+      document.getElementById("welcome").innerText = `Bem-vindo, ${user.email}`;
+    }
+
+    const calculateBtn = document.getElementById("calculate");
+    const totalSpan = document.getElementById("total");
+    const historyList = document.getElementById("historyList");
+
+    function loadHistory() {
+      if (!user || !user.email) return;
+      const fullHistory = JSON.parse(localStorage.getItem("calcHistory")) || {};
+      const userHistory = fullHistory[user.email] || [];
+      historyList.innerHTML = "";
+      userHistory.forEach((item) => {
+        const li = document.createElement("li");
+        li.textContent = item;
+        historyList.appendChild(li);
+      });
+    }
+
+    function saveHistory(text) {
+      if (!user || !user.email) return;
+      const fullHistory = JSON.parse(localStorage.getItem("calcHistory")) || {};
+      if (!fullHistory[user.email]) fullHistory[user.email] = [];
+      fullHistory[user.email].unshift(text);
+      fullHistory[user.email] = fullHistory[user.email].slice(0, 10); // Limita a 10 registros
+      localStorage.setItem("calcHistory", JSON.stringify(fullHistory));
+    }
+
+    calculateBtn.addEventListener("click", () => {
+      const capital = parseFloat(document.getElementById("value").value);
+      const taxa = parseFloat(document.getElementById("fee").value);
+      const tempo = parseInt(document.getElementById("time").value);
+
+      if (isNaN(capital) || isNaN(taxa) || isNaN(tempo)) {
+        alert("Preencha todos os campos corretamente.");
+        return;
+      }
+
+      const montante = capital * Math.pow(1 + taxa / 100, tempo);
+      const resultado = `R$ ${montante.toFixed(2)}`;
+      totalSpan.textContent = resultado;
+
+      const registro = `Capital: R$${capital.toFixed(2)}, Taxa: ${taxa}%, Tempo: ${tempo} meses = ${resultado}`;
+      saveHistory(registro);
+      loadHistory();
+    });
+
+    function logout() {
+      localStorage.removeItem("loggedUser");
+      window.location.href = "index.html";
+    }
+
+    loadHistory();
+  </script>
+</body>
+</html>
